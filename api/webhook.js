@@ -69,7 +69,7 @@ Respond like a thoughtful collaborator.`;
 
     res.status(200).json({ audio: audioBase64 });
   } catch (err) {
-    console.error("❌ Error during webhook processing:", err.response?.data || err.message || err);
+    console.error("Error during webhook processing:", err.response?.data || err.message || err);
     res.status(500).send("Error generating response");
   }
 };
