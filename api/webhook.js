@@ -34,7 +34,7 @@ Respond like a thoughtful collaborator.`;
       {
         model: "gpt-4o",
         messages: [
-          { role: "system", content: "You are a conversational collaborator with memory." },
+          { role: "system", content: "You are a conversational collaborator with memory. Keep replies concise and under 20 seconds when read aloud." },
           { role: "user", content: prompt }
         ]
       },
@@ -46,7 +46,15 @@ Respond like a thoughtful collaborator.`;
       }
     );
 
-    const replyText = gptResponse.data.choices[0].message.content;
+//    const replyText = gptResponse.data.choices[0].message.content;
+
+    let replyText = gptResponse.data.choices[0].message.content.trim();
+
+    // Limit to ~500 characters (approx. 15–20s of speech)
+    if (replyText.length > 500) {
+      replyText = replyText.substring(0, 497) + '...';
+    }
+
     console.log("🧾 GPT reply:", replyText);
 
     // 🔊 Text-to-Speech
@@ -64,6 +72,8 @@ Respond like a thoughtful collaborator.`;
         responseType: 'arraybuffer'
       }
     );
+
+    console.log("🗣️ Audio length (bytes):", ttsResponse.data.length);
 
     const audioBase64 = Buffer.from(ttsResponse.data, 'binary').toString('base64');
 
