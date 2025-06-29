@@ -12,7 +12,9 @@ const userContext = {
 module.exports = async (req, res) => {
   try {
     // Accept both nested and flat formats
-    const userInput = req.body?.input?.text || req.body?.["input.text"];
+//    const userInput = req.body?.input?.text || req.body?.["input.text"];
+    const userInput = req.body.input || "";
+
 
     if (!userInput || typeof userInput !== "string") {
       return res.status(400).json({ error: "Missing or invalid 'input.text'" });
