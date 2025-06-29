@@ -10,9 +10,17 @@ const userContext = {
 };
 
 module.exports = async (req, res) => {
-  const userInput = req.body.input?.text || "";
+  try {
+    // Accept both nested and flat formats
+    const userInput = req.body?.input?.text || req.body?.["input.text"];
 
-  const prompt = `You are a helpful, context-aware AI assistant named Convo. You are speaking with ${userContext.name}, 
+    if (!userInput || typeof userInput !== "string") {
+      return res.status(400).json({ error: "Missing or invalid 'input.text'" });
+    }
+
+    console.log("🎤 Incoming user input:", userInput);
+
+    const prompt = `You are a helpful, context-aware AI assistant named Convo. You are speaking with ${userContext.name}, 
 who is working on ${userContext.projects.join(", ")}, focused on ${userContext.goals.join(", ")},
 with core values ${userContext.values.join(", ")}, strengths ${userContext.strengths.join(", ")}, and weaknesses ${userContext.weaknesses.join(", ")}.
 
@@ -20,38 +28,48 @@ ${userContext.name} says: "${userInput}"
 
 Respond like a thoughtful collaborator.`;
 
-  try {
-    const gptResponse = await axios.post('https://api.openai.com/v1/chat/completions', {
-      model: "gpt-4o",
-      messages: [
-        { role: "system", content: "You are a conversational collaborator with memory." },
-        { role: "user", content: prompt }
-      ]
-    }, {
-      headers: {
-        'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
-        'Content-Type': 'application/json'
+    // 🧠 Call OpenAI
+    const gptResponse = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: "gpt-4o",
+        messages: [
+          { role: "system", content: "You are a conversational collaborator with memory." },
+          { role: "user", content: prompt }
+        ]
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${process.env.OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        }
       }
-    });
+    );
 
     const replyText = gptResponse.data.choices[0].message.content;
+    console.log("🧾 GPT reply:", replyText);
 
-    const ttsResponse = await axios.post(`https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`, {
-      text: replyText,
-      voice_settings: { stability: 0.4, similarity_boost: 0.8 }
-    }, {
-      headers: {
-        'xi-api-key': process.env.ELEVENLABS_API_KEY,
-        'Content-Type': 'application/json'
+    // 🔊 Text-to-Speech
+    const ttsResponse = await axios.post(
+      `https://api.elevenlabs.io/v1/text-to-speech/${process.env.ELEVENLABS_VOICE_ID}`,
+      {
+        text: replyText,
+        voice_settings: { stability: 0.4, similarity_boost: 0.8 }
       },
-      responseType: 'arraybuffer'
-    });
+      {
+        headers: {
+          'xi-api-key': process.env.ELEVENLABS_API_KEY,
+          'Content-Type': 'application/json'
+        },
+        responseType: 'arraybuffer'
+      }
+    );
 
     const audioBase64 = Buffer.from(ttsResponse.data, 'binary').toString('base64');
 
     res.status(200).json({ audio: audioBase64 });
   } catch (err) {
-    console.error("Error:", err.response?.data || err.message);
+    console.error("❌ Error during webhook processing:", err.response?.data || err.message || err);
     res.status(500).send("Error generating response");
   }
 };
