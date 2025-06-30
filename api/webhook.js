@@ -81,10 +81,15 @@ Respond like a thoughtful collaborator.`;
 
 //    res.status(200).json({ audio: audioBase64 });
 
-    res.status(200).json({
-      audio: null,
-      text: "THIS SHOULD NEVER BE USED"
-    });
+    const silentWavBase64 = "UklGRiQAAABXQVZFZm10IBAAAAABAAEA..."; // trimmed for space
+    res.status(200).json({ audio: silentWavBase64 });
+
+
+
+    // res.status(200).json({
+    //   audio: null,
+    //   text: "THIS SHOULD NEVER BE USED"
+    // });
 
     
   } catch (err) {
